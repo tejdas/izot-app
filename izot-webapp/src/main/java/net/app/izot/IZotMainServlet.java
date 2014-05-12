@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,10 +56,8 @@ public class IZotMainServlet extends HttpServlet {
                 writer.println("Channel: " + channelName + " MessageCount: " + messageCount);
             } else if (StringUtils.equalsIgnoreCase(servletPath, "message")) {
                 getAndDisplayMessage(channelName, writer);
-                //writer.println("Channel: " + channelName + " Message: " + message);
             }
         }
-
         writer.close();
     }
 
