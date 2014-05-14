@@ -4,15 +4,25 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
 	<display-name>IZot Webapp</display-name>
-
+	<!-- <servlet> <servlet-name>IzotWebApp</servlet-name> <servlet-class>net.app.izot.IZotMainServlet</servlet-class> 
+		</servlet> <servlet-mapping> <servlet-name>IzotWebApp</servlet-name> <url-pattern>/</url-pattern> 
+		</servlet-mapping> -->
 	<servlet>
 		<servlet-name>IzotWebApp</servlet-name>
-		<servlet-class>net.app.izot.IZotMainServlet</servlet-class>
+		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+		<init-param>
+			<param-name>javax.ws.rs.Application</param-name>
+			<param-value>net.app.izot.MyApplication</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
 	</servlet>
 
 	<servlet-mapping>
 		<servlet-name>IzotWebApp</servlet-name>
-		<url-pattern>/</url-pattern>
+		<url-pattern>/izot/*</url-pattern>
 	</servlet-mapping>
-
+	
+	<listener>
+		<listener-class>net.app.izot.IzotServletContextListener</listener-class>
+	</listener>
 </web-app>
