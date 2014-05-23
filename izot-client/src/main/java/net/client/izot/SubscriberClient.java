@@ -5,9 +5,9 @@ import com.pubnub.api.Pubnub;
 import com.pubnub.api.PubnubException;
 
 public class SubscriberClient {
-    public static final String PUB_KEY = "pub-c-b2a4b991-340e-4168-9961-057d48f97e5c";
+    public static final String PUB_KEY = "InputPublisherKeyFromPubNub";
 
-    public static final String SUB_KEY = "sub-c-c41ca018-d894-11e3-a226-02ee2ddab7fe";
+    public static final String SUB_KEY = "InputSubscriberKeyFromPubNub";
 
     public static void main(String[] args) {
         if (args == null || args.length == 0) {
