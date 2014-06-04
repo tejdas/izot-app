@@ -10,10 +10,6 @@ import com.pubnub.api.Pubnub;
 import com.pubnub.api.PubnubException;
 
 public class PubnubSubscriber {
-    public static final String PUB_KEY = "InputPublisherKeyFromPubNub";
-
-    public static final String SUB_KEY = "InputSubscriberKeyFromPubNub";
-
     private final Queue<JSONObject> messages = new ConcurrentLinkedQueue<>();
 
     public final String channel;
@@ -43,5 +39,9 @@ public class PubnubSubscriber {
 
     public JSONObject getMessage() {
         return messages.poll();
+    }
+
+    public void clearMessages() {
+        messages.clear();
     }
 }

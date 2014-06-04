@@ -1,7 +1,6 @@
 package net.app.izot;
 
 import java.net.URI;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -56,6 +55,14 @@ public class IzotService {
         Map<String, Object> jsonData = new HashMap<>();
         jsonData.put("messageCount", messageCount);
         return jsonData;
+    }
+
+    @GET
+    @Path("/clear")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response clear(@QueryParam("channel") String channel) {
+        clearMessages(channel);
+        return Response.status(Status.OK).build();
     }
 
     @GET
@@ -125,6 +132,16 @@ public class IzotService {
         if (subscribers.containsKey(channel)) {
             PubnubSubscriber subscriber = subscribers.get(channel);
             return subscriber.getMessageCount();
+        }
+        else {
+            throw new NotFoundException(channel);
+        }
+    }
+
+    private static void clearMessages(String channel) {
+        if (subscribers.containsKey(channel)) {
+            PubnubSubscriber subscriber = subscribers.get(channel);
+            subscriber.clearMessages();
         }
         else {
             throw new NotFoundException(channel);
