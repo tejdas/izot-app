@@ -13,25 +13,19 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
-import net.client.izot.PubnubPublisher;
 
 public class Listener {
 	private static final class IzotChannelInitializer extends
 			ChannelInitializer<SocketChannel> {
-		public IzotChannelInitializer(PubnubPublisher pubnubPublisher) {
-			super();
-			this.pubnubPublisher = pubnubPublisher;
-		}
-		private final PubnubPublisher pubnubPublisher;
 		@Override
 		protected void initChannel(SocketChannel ch) throws Exception {
 			ChannelPipeline pipeline = ch.pipeline();
 			pipeline.addLast("frameDecoder", new LineBasedFrameDecoder(256));
 			pipeline.addLast("stringDecoder", new StringDecoder(
 					CharsetUtil.UTF_8));
-			pipeline.addLast("stringEncoder", new StringEncoder(CharsetUtil.UTF_8));
-			pipeline.addLast("handler", new IzotConnectionHandler(pubnubPublisher));
-
+			pipeline.addLast("stringEncoder", new StringEncoder(
+					CharsetUtil.UTF_8));
+			pipeline.addLast("handler", new IzotConnectionHandler());
 		}
 	}
 
@@ -40,14 +34,13 @@ public class Listener {
 	private Channel serverChannel = null;
 	private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
 	private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
-	private final PubnubPublisher pubnubPublisher = new PubnubPublisher();
 
 	public void start(int listenPort) {
 		final ServerBootstrap bootstrap = new ServerBootstrap();
 		bootstrap.group(bossGroup, workerGroup).channel(
 				NioServerSocketChannel.class);
 		bootstrap.option(ChannelOption.SO_BACKLOG, 100);
-		bootstrap.childHandler(new IzotChannelInitializer(pubnubPublisher));
+		bootstrap.childHandler(new IzotChannelInitializer());
 
 		ChannelFuture f = bootstrap.bind(LISTEN_ADDRESS, listenPort);
 		try {
@@ -58,8 +51,8 @@ public class Listener {
 		}
 
 		serverChannel = f.channel();
-		pubnubPublisher.initialize();
-		System.out.println(String.format("Izot Listener on %s:%s", LISTEN_ADDRESS, listenPort));
+		System.out.println(String.format("Izot Listener on %s:%s",
+				LISTEN_ADDRESS, listenPort));
 	}
 
 	public void shutdown() {
@@ -68,7 +61,6 @@ public class Listener {
 		}
 
 		hasShutdown = true;
-		pubnubPublisher.shutdown();
 		try {
 			if (serverChannel != null) {
 				serverChannel.close().sync();

@@ -8,7 +8,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 public class IzotBridgeDriver {
-	public static final String DEFAULT_LISTEN_PORT = "8746";
+	public static final String DEFAULT_LISTEN_PORT = "5005";
 	public static final String DEFAULT_PUBLISH_CHANNEL = "HelloWorldTej";
 
 	public static int listenPort = Integer.parseInt(DEFAULT_LISTEN_PORT);
@@ -26,6 +26,7 @@ public class IzotBridgeDriver {
 
 	public static void shutdown() {
 		listener.shutdown();
+		PubnubContext.shutdown();
 	}
 
 	public static void main(String[] args) throws ParseException {
@@ -52,6 +53,7 @@ public class IzotBridgeDriver {
 		System.out.println("Listen port: " + listenPort
 				+ " Pubnub publishChannel: " + publishChannel);
 
+		PubnubContext.initialize();
 		listener.start(listenPort);
 		final ShutdownHook sh = new ShutdownHook();
 		Runtime.getRuntime().addShutdownHook(sh);

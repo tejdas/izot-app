@@ -37,13 +37,16 @@ public class IzotHttpClient {
             System.out.println("Content Length: " + response.getEntity()
                     .getContentLength());
 
-            try (BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity()
-                    .getContent()))) {
+            BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity()
+                    .getContent()));
+            try {
                 String line = "";
                 while ((line = rd.readLine()) != null) {
                     jsonMessage.append(line);
                 }
                 System.out.println("Message body: " + jsonMessage.toString());
+            } finally {
+            	rd.close();
             }
         } finally {
             client.close();

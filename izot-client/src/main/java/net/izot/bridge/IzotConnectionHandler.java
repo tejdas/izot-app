@@ -2,16 +2,15 @@ package net.izot.bridge;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import net.client.izot.PubnubPublisher;
 
 import org.json.JSONObject;
 
 public class IzotConnectionHandler extends SimpleChannelInboundHandler<String> {
-	private final PubnubPublisher pubnubPublisher;
+	private final PubnubPublisher pubnubPublisher = new PubnubPublisher();
+	private IzotConnection connection = null;
 
-	public IzotConnectionHandler(PubnubPublisher pubnubPublisher) {
-		super();
-		this.pubnubPublisher = pubnubPublisher;
+	protected void setConnection(IzotConnection connection) {
+		this.connection = connection;
 	}
 
 	@Override
@@ -21,8 +20,16 @@ public class IzotConnectionHandler extends SimpleChannelInboundHandler<String> {
 	}
 
 	@Override
+	public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+		System.out.println("Channel unregistered");
+		if (connection != null) {
+			connection.disconnected();
+		}
+		super.channelUnregistered(ctx);
+	}
+
+	@Override
 	public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-		System.out.println("Channel read complete");
 		ctx.flush();
 	}
 
@@ -30,6 +37,9 @@ public class IzotConnectionHandler extends SimpleChannelInboundHandler<String> {
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
 			throws Exception {
 		System.out.println("Exception caught: " + cause.toString());
+		if (connection != null) {
+			connection.disconnected();
+		}
 		ctx.close();
 	}
 

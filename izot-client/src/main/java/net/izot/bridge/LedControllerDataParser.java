@@ -8,7 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class LedControllerDataParser {
-	private static final List<String> keys = new ArrayList<>();
+	private static final List<String> keys = new ArrayList<String>();
 
 	public static void buildKeys(String keyString) {
 		keys.clear();
@@ -29,7 +29,7 @@ public class LedControllerDataParser {
 		while (tokenizer.hasMoreTokens() && (index < keys.size())) {
 			String key = keys.get(index++);
 			String value = tokenizer.nextToken().trim();
-	        try {
+			try {
 				jsonObj.put(key, value);
 			} catch (JSONException e) {
 				throw new RuntimeException("Malformed LED data", e);
