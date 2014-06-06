@@ -3,88 +3,100 @@ package net.izot.bridge;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.pubnub.api.PubnubException;
-
 public class SubscriptionManager {
     private static final ConcurrentMap<String, MessageRouter> messageRouters = new ConcurrentHashMap<String, MessageRouter>();
 
+    private static final Object connectionsLock = new Object();
+
     private static final ConcurrentMap<String, IzotConnection> connections = new ConcurrentHashMap<String, IzotConnection>();
 
-    private static final Object lock = new Object();
+    private static final Object routerssLock = new Object();
 
-    public static void registerSubscriber(String channelName, String host,
+    public static void registerSubscriber(String pubnubChannel, String host,
             int port) {
         String address = String.format("%s:%d", host, port);
-        IzotConnection connection = getConnection(address);
-        if (connection == null) {
-            connection = IzotConnectionFactory.createConnection(host, port);
-            if (connection == null) {
-                System.out.println("Cannot created connection to : " + address);
-            }
-            connection = registerConnection(address, connection);
-        }
 
-        MessageRouter messageRouter = null;
-        synchronized (lock) {
-            messageRouter = messageRouters.get(channelName);
-            if (messageRouter == null) {
-                messageRouter = new MessageRouter(channelName);
-                PubnubSubscriber subscriber = new PubnubSubscriber(channelName, PubnubContext.getPubnub(), messageRouter);
-                messageRouter.setSubscriber(subscriber);
-                try {
-                    subscriber.start();
-                } catch (PubnubException e) {
-                    System.out.println("Could not start subscriber at channel: " + channelName);
+        IzotConnection connection;
+        synchronized (connectionsLock) {
+            connection = connections.get(address);
+            if (connection == null) {
+                connection = IzotConnectionFactory.createConnection(host, port, address);
+                if (connection == null) {
+                    System.out.println("Cannot created connection to : "
+                            + address);
                     return;
                 }
-                messageRouters.put(channelName, messageRouter);
-                System.out.println("Message router created for channel: " + channelName);
+                connections.put(address, connection);
+            }
+            connection.register(pubnubChannel);
+        }
+
+        MessageRouter messageRouter;
+        boolean doInititialize = false;
+        synchronized (routerssLock) {
+            messageRouter = messageRouters.get(pubnubChannel);
+            if (messageRouter == null) {
+                doInititialize = true;
+                messageRouter = new MessageRouter(pubnubChannel);
+                messageRouters.put(pubnubChannel, messageRouter);
+            }
+            messageRouter.register(address);
+        }
+
+        if (doInititialize) {
+            if (!messageRouter.initialize()) {
+                synchronized (routerssLock) {
+                    messageRouters.remove(pubnubChannel);
+                }
+                return;
             }
         }
-        messageRouter.register(address);
-        System.out.println("Message router for channel: " + channelName + " and endpoint: " + address);
+        System.out.println("Message router for channel: " + pubnubChannel
+                + " and endpoint: " + address);
     }
 
-    public static void unregisterSubscriber(String channelName, String host,
+    public static void unregisterSubscriber(String pubnubChannel, String host,
             int port) {
         String address = String.format("%s:%d", host, port);
-        IzotConnection connection = unregisterConnection(address);
-        if (connection != null) {
-            connection.close();
-        }
-
-        MessageRouter messageRouter = messageRouters.get(channelName);
-        if (messageRouter != null) {
-            messageRouter.unregister(address);
-            if (!messageRouter.hasSubscribers()) {
-                messageRouters.remove(channelName);
-                try {
-                    messageRouter.getSubscriber().stop();
-                } catch (PubnubException e) {
-                    System.out.println("Could not stop subscriber at channel: " + channelName);
+        IzotConnection connection;
+        synchronized (connectionsLock) {
+            connection = connections.get(address);
+            if (connection != null) {
+                connection.unregister(pubnubChannel);
+                if (!connection.hasPubnubSubscribers()) {
+                    connections.remove(address);
+                    connection.close();
                 }
             }
         }
-        System.out.println("Endpoint: " + address + " unsubscribed from channel: " + channelName);
-    }
 
-    public static IzotConnection registerConnection(String address,
-            IzotConnection connection) {
-        IzotConnection conn = connections.putIfAbsent(address, connection);
-        if (conn == null) {
-            return connection;
+        MessageRouter messageRouter;
+        boolean doCleanup = false;
+        synchronized (routerssLock) {
+            messageRouter = messageRouters.get(pubnubChannel);
+            if (messageRouter != null) {
+                messageRouter.unregister(address);
+                if (!messageRouter.hasSubscribers()) {
+                    messageRouter = messageRouters.remove(pubnubChannel);
+                    doCleanup = true;
+                }
+            }
         }
-        if (conn != connection) {
-            connection.close();
+
+        if (doCleanup) {
+            messageRouter.cleanup();
         }
-        return conn;
+        System.out.println("Endpoint: " + address
+                + " unsubscribed from channel: " + pubnubChannel);
     }
 
     public static IzotConnection getConnection(String address) {
         return connections.get(address);
     }
 
-    public static IzotConnection unregisterConnection(String address) {
-        return connections.remove(address);
+    public static void unregisterConnection(String address, IzotConnection connection) {
+        synchronized (connectionsLock) {
+            connections.remove(address, connection);
+        }
     }
 }

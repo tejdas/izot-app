@@ -3,9 +3,9 @@ package net.izot.bridge;
 import com.pubnub.api.Pubnub;
 
 public class PubnubContext {
-    public static final String PUB_KEY = "InputPublisherKeyFromPubNub";
+    public static final String PUB_KEY = "PUBKEY";
 
-    public static final String SUB_KEY = "InputSubscriberKeyFromPubNub";
+    public static final String SUB_KEY = "SUBKEY";
 
     private static Pubnub pubnub = null;
 

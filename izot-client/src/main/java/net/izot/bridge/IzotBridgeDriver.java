@@ -20,6 +20,8 @@ public class IzotBridgeDriver {
 
     private static final HelpFormatter formatter = new HelpFormatter();
 
+    private static volatile boolean isInitialized = false;
+
     private static final class ShutdownHook extends Thread {
         @Override
         public void run() {
@@ -28,9 +30,11 @@ public class IzotBridgeDriver {
     }
 
     public static void shutdown() {
-        IzotConnectionFactory.shutdown();
-        listener.shutdown();
-        PubnubContext.shutdown();
+        if (isInitialized) {
+            IzotConnectionFactory.shutdown();
+            listener.shutdown();
+            PubnubContext.shutdown();
+        }
     }
 
     public static void main(String[] args) throws ParseException {
@@ -55,11 +59,15 @@ public class IzotBridgeDriver {
             listenPort = Integer.parseInt(listenPortVal);
         }
         System.out.println("Listen port: " + listenPort + " Pubnub publishChannel: " + publishChannel);
+        initialize();
+    }
 
-        PubnubContext.initialize();
+	private static void initialize() {
+		PubnubContext.initialize();
         IzotConnectionFactory.initialize();
         listener.start(listenPort);
+        isInitialized = true;
         final ShutdownHook sh = new ShutdownHook();
         Runtime.getRuntime().addShutdownHook(sh);
-    }
+	}
 }

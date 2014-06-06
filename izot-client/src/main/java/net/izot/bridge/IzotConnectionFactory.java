@@ -39,11 +39,11 @@ public class IzotConnectionFactory {
         }
     }
 
-    public static IzotConnection createConnection(String host, int port) {
+    public static IzotConnection createConnection(String host, int port, String address) {
         try {
             ChannelFuture f = bootStrap.connect(host, port).sync();
             Channel ch = f.sync().channel();
-            IzotConnection connection = new IzotConnection(ch);
+            IzotConnection connection = new IzotConnection(ch, address);
             connection.initialize();
             System.out.println(String.format("Connection created to %s:%d",
                     host, port));

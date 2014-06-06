@@ -50,7 +50,7 @@ public class Listener {
         try {
             f.sync();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
+            Thread.currentThread().interrupt();
             e.printStackTrace();
         }
 
@@ -71,7 +71,7 @@ public class Listener {
                 serverChannel = null;
             }
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
+            Thread.currentThread().interrupt();
             e.printStackTrace();
         } finally {
             bossGroup.shutdownGracefully();

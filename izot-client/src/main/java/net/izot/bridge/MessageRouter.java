@@ -5,6 +5,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.json.JSONObject;
 
+import com.pubnub.api.PubnubException;
+
 public class MessageRouter {
     private final String channel;
 
@@ -38,13 +40,32 @@ public class MessageRouter {
         return (registeredTCPSubscribers.size() > 0);
     }
 
+    public boolean initialize() {
+        PubnubSubscriber subscriber = new PubnubSubscriber(channel, PubnubContext.getPubnub(), this);
+        setSubscriber(subscriber);
+        try {
+            subscriber.start();
+            return true;
+        } catch (PubnubException e) {
+            System.out.println("Could not start subscriber at channel: " + channel);
+            return false;
+        }
+    }
+
+    public void cleanup() {
+        try {
+            subscriber.stop();
+        } catch (PubnubException e) {
+            System.out.println("Could not stop subscriber at channel: " + channel);
+        }
+    }
+
     public void routeMessage(JSONObject message) {
         String messageStr = message.toString();
         for (String address : registeredTCPSubscribers) {
             IzotConnection connection = SubscriptionManager.getConnection(address);
             if (connection != null) {
                 if (connection.isClosed()) {
-                    SubscriptionManager.unregisterConnection(address);
                     registeredTCPSubscribers.remove(address);
                     System.out.println("Message could not be routed. Connection to: " + address + " is already closed");
                 } else {
@@ -53,6 +74,7 @@ public class MessageRouter {
                 }
             } else {
                 System.out.println("Message could not be routed. No connection to: " + address);
+                registeredTCPSubscribers.remove(address);
             }
         }
     }
