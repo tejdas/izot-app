@@ -8,10 +8,14 @@ import com.pubnub.api.PubnubException;
 
 public class PubnubSubscriber {
     public final String channel;
+
     private final Pubnub pubnub;
+
     private final MessageRouter messageRouter;
 
-    public PubnubSubscriber(String channel, Pubnub pubnub, MessageRouter messageRouter) {
+    public PubnubSubscriber(String channel,
+            Pubnub pubnub,
+            MessageRouter messageRouter) {
         this.channel = channel;
         this.pubnub = pubnub;
         this.messageRouter = messageRouter;
@@ -23,9 +27,15 @@ public class PubnubSubscriber {
             public void successCallback(String channel, Object message) {
                 System.out.println("RECEIVED message on channel: " + channel);
                 if (message instanceof JSONObject) {
-                	messageRouter.routeMessage((JSONObject)message);
+                    messageRouter.routeMessage((JSONObject) message);
                 }
             }
         });
+        System.out.println("Subscribed to Pubnub channel: " + channel);
+    }
+
+    public void stop() throws PubnubException {
+        pubnub.unsubscribe(channel);
+        System.out.println("Unsubscribed from Pubnub channel: " + channel);
     }
 }

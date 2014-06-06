@@ -1,37 +1,59 @@
 package net.izot.bridge;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.json.JSONObject;
 
 public class MessageRouter {
-	private final ConcurrentMap<String, IzotConnection> registeredConnections = new ConcurrentHashMap<String, IzotConnection>();
+    private final String channel;
 
-	public void register(String address, IzotConnection connection) {
-		registeredConnections.put(address, connection);
-	}
+    private final Set<String> registeredTCPSubscribers = new CopyOnWriteArraySet<String>();
 
-	public void unregister(IzotConnection connection) {
-		registeredConnections.remove(connection);
-	}
+    private PubnubSubscriber subscriber = null;
 
-	public void routeMessage(JSONObject message) {
-		String messageStr = message.toString();
-		List<String> closedConnections = new ArrayList<String>();
-		for (Entry<String, IzotConnection> pair : registeredConnections
-				.entrySet()) {
-			if (pair.getValue().isClosed()) {
-				closedConnections.add(pair.getKey());
-			} else {
-				pair.getValue().sendMessage(messageStr);
-			}
-		}
-		for (String address : closedConnections) {
-			registeredConnections.remove(address);
-		}
-	}
+    public MessageRouter(String channel) {
+        this.channel = channel;
+    }
+
+    public void setSubscriber(PubnubSubscriber subscriber) {
+        this.subscriber = subscriber;
+    }
+
+    public PubnubSubscriber getSubscriber() {
+        return subscriber;
+    }
+
+    public void register(String address) {
+        registeredTCPSubscribers.add(address);
+        System.out.println("Endpoint: " + address + " subscribed on Pubnub channel: " + channel);
+    }
+
+    public void unregister(String address) {
+        registeredTCPSubscribers.remove(address);
+        System.out.println("Endpoint: " + address + " unsubscribed from Pubnub channel: " + channel);
+    }
+
+    public boolean hasSubscribers() {
+        return (registeredTCPSubscribers.size() > 0);
+    }
+
+    public void routeMessage(JSONObject message) {
+        String messageStr = message.toString();
+        for (String address : registeredTCPSubscribers) {
+            IzotConnection connection = SubscriptionManager.getConnection(address);
+            if (connection != null) {
+                if (connection.isClosed()) {
+                    SubscriptionManager.unregisterConnection(address);
+                    registeredTCPSubscribers.remove(address);
+                    System.out.println("Message could not be routed. Connection to: " + address + " is already closed");
+                } else {
+                    System.out.println("Message being routed to: " + address);
+                    connection.sendMessage(messageStr);
+                }
+            } else {
+                System.out.println("Message could not be routed. No connection to: " + address);
+            }
+        }
+    }
 }

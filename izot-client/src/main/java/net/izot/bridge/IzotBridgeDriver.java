@@ -8,54 +8,58 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 public class IzotBridgeDriver {
-	public static final String DEFAULT_LISTEN_PORT = "5005";
-	public static final String DEFAULT_PUBLISH_CHANNEL = "HelloWorldTej";
+    public static final String DEFAULT_LISTEN_PORT = "5005";
 
-	public static int listenPort = Integer.parseInt(DEFAULT_LISTEN_PORT);
-	public static String publishChannel = DEFAULT_PUBLISH_CHANNEL;
+    public static final String DEFAULT_PUBLISH_CHANNEL = "HelloWorldTej";
 
-	private static final Listener listener = new Listener();
-	private static final HelpFormatter formatter = new HelpFormatter();
+    public static int listenPort = Integer.parseInt(DEFAULT_LISTEN_PORT);
 
-	private static final class ShutdownHook extends Thread {
-		@Override
-		public void run() {
-			IzotBridgeDriver.shutdown();
-		}
-	}
+    public static String publishChannel = DEFAULT_PUBLISH_CHANNEL;
 
-	public static void shutdown() {
-		listener.shutdown();
-		PubnubContext.shutdown();
-	}
+    private static final Listener listener = new Listener();
 
-	public static void main(String[] args) throws ParseException {
-		Options options = new Options();
-		options.addOption("listenPort", true,
-				"Izot Bridge TCP listen port; default: " + DEFAULT_LISTEN_PORT);
-		options.addOption("publishChannel", true,
-				"Pubnub publish channel; default: " + DEFAULT_PUBLISH_CHANNEL);
-		options.addOption("help", false, "help text");
-		if (args.length != 0) {
-			CommandLineParser parser = new BasicParser();
-			CommandLine cl = parser.parse(options, args);
-			if (cl.hasOption("help")) {
-				formatter.printHelp("IzotBridgeDriver", options);
-				return;
-			}
+    private static final HelpFormatter formatter = new HelpFormatter();
 
-			String listenPortVal = cl.getOptionValue("listenPort",
-					DEFAULT_LISTEN_PORT);
-			publishChannel = cl.getOptionValue("publishChannel",
-					DEFAULT_PUBLISH_CHANNEL);
-			listenPort = Integer.parseInt(listenPortVal);
-		}
-		System.out.println("Listen port: " + listenPort
-				+ " Pubnub publishChannel: " + publishChannel);
+    private static final class ShutdownHook extends Thread {
+        @Override
+        public void run() {
+            IzotBridgeDriver.shutdown();
+        }
+    }
 
-		PubnubContext.initialize();
-		listener.start(listenPort);
-		final ShutdownHook sh = new ShutdownHook();
-		Runtime.getRuntime().addShutdownHook(sh);
-	}
+    public static void shutdown() {
+        IzotConnectionFactory.shutdown();
+        listener.shutdown();
+        PubnubContext.shutdown();
+    }
+
+    public static void main(String[] args) throws ParseException {
+        Options options = new Options();
+        options.addOption("listenPort", true,
+                "Izot Bridge TCP listen port; default: " + DEFAULT_LISTEN_PORT);
+        options.addOption("publishChannel", true,
+                "Pubnub publish channel; default: " + DEFAULT_PUBLISH_CHANNEL);
+        options.addOption("help", false, "help text");
+        if (args.length != 0) {
+            CommandLineParser parser = new BasicParser();
+            CommandLine cl = parser.parse(options, args);
+            if (cl.hasOption("help")) {
+                formatter.printHelp("IzotBridgeDriver", options);
+                return;
+            }
+
+            String listenPortVal = cl.getOptionValue("listenPort",
+                    DEFAULT_LISTEN_PORT);
+            publishChannel = cl.getOptionValue("publishChannel",
+                    DEFAULT_PUBLISH_CHANNEL);
+            listenPort = Integer.parseInt(listenPortVal);
+        }
+        System.out.println("Listen port: " + listenPort + " Pubnub publishChannel: " + publishChannel);
+
+        PubnubContext.initialize();
+        IzotConnectionFactory.initialize();
+        listener.start(listenPort);
+        final ShutdownHook sh = new ShutdownHook();
+        Runtime.getRuntime().addShutdownHook(sh);
+    }
 }
